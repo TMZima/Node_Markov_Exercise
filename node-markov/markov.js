@@ -17,14 +17,14 @@ class MarkovMachine {
   makeChains() {
     this.chains = {};
 
-    for (let i = 0; i < this.words.length; i++) {
-      let word = this.words[i];
-      let nextWord = this.words[i + 1] || null;
+    for (let i = 0; i < this.words.length - 1; i++) {
+      let wordPair = `${this.words[i]} ${this.words[i + 1]}`;
+      let nextWord = this.words[i + 2] || null;
 
-      if (!this.chains[word]) {
-        this.chains[word] = [];
+      if (!this.chains[wordPair]) {
+        this.chains[wordPair] = [];
       }
-      this.chains[word].push(nextWord);
+      this.chains[wordPair].push(nextWord);
     }
   }
 
@@ -34,19 +34,25 @@ class MarkovMachine {
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
-  /** return random text from chains */
+  /** generator function to yield words one by one */
 
-  makeText(numWords = 100) {
+  *generateText(numWords = 100) {
     let keys = Object.keys(this.chains);
-    let key = MarkovMachine.pickElement(keys);
-    let output = [];
+    let capitalizedKeys = keys.filter((wordPair) =>
+      /^[A-Z]/.test(wordPair.split(" ")[0])
+    );
+    let key = MarkovMachine.pickElement(
+      capitalizedKeys.length > 0 ? capitalizedKeys : keys
+    );
+    let output = key.split(" ");
 
     while (output.length < numWords && key !== null) {
-      output.push(key);
-      key = MarkovMachine.pickElement(this.chains[key]);
+      let nextWord = MarkovMachine.pickElement(this.chains[key]);
+      if (nextWord === null) break;
+      output.push(nextWord);
+      key = `${output[output.length - 2]} ${output[output.length - 1]}`;
+      yield nextWord;
     }
-
-    return output.join(" ");
   }
 }
 
